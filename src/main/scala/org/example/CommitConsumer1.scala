@@ -21,27 +21,13 @@ import akka.stream.Graph
 import akka.stream.SinkShape
 import akka.stream.scaladsl.Flow
 
-object Alpakka1 extends App {
-
-  def divertOnFailure[F,S,M](source: Source[Either[F,S], M],
-    successSink : Graph[SinkShape[S], _],
-    failureSink : Graph[SinkShape[F], _]): RunnableGraph[M] = {
-    source.
-      divertTo(Flow[Either[F,S]].map[F]{
-          case Left(result) => result
-        }.to(failureSink), _.isLeft).
-      map{
-        case Right(result) => result
-      }.
-      to(successSink)
-  }
-
+object CommitConsumer1 extends App {
   // A sample consumer
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   val config = ConfigFactory.load()
 
   val system = ActorSystem("consumer", config)
-  implicit val materializer = Materializer(system)
+  implicit val materializer: Materializer = Materializer(system)
 
   val consumerConfig = system.settings.config.getConfig("akka.kafka.consumer")
 
@@ -56,13 +42,7 @@ object Alpakka1 extends App {
 
   val committerDefaults = CommitterSettings(system)
 
-//  val failureSink = Flow[String].
-//    map{
-//      oops =>
-//        system.log.error(s"We got an oops $oops")
-//    }.toMat(Committer.sink(committerDefaults))(DrainingControl.apply)
-
-  val control =
+  val stream =
     Consumer
       .committableSource(consumerSettings, Subscriptions.topics("topic1"))
       .mapAsync(1){
@@ -71,7 +51,9 @@ object Alpakka1 extends App {
           business(msg.record.key, msg.record.value).map(_ => msg.committableOffset)
       }
       .toMat(Committer.sink(committerDefaults))(DrainingControl.apply)
-      .run()
+
+  val f = stream.run()
+  f.drainAndShutdown()
 
   def business(key: String, value: String): Future[Done] = {
     Future(system.log.info(s"key $key value $value")).map(_ => Done)

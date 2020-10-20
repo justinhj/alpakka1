@@ -21,9 +21,8 @@ import akka.kafka.scaladsl.Producer
 import akka.kafka.ProducerMessage
 import akka.kafka.ProducerMessage.MultiResultPart
 
-object Alpakka2 extends App {
+object FlexProducer extends App {
 
-  // A sample consumer
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   val config = ConfigFactory.load()
 
@@ -46,7 +45,7 @@ object Alpakka2 extends App {
 
   // FlexiFlow
 
- val done = Source(1 to 10000)
+ val stream = Source(1 to 10)
   .map { number =>
     val partition = 0
     val value = number.toString
@@ -55,6 +54,9 @@ object Alpakka2 extends App {
       number * number
     )
   }
+   // Flexiflow producer let's us write the message to a stream and then continue with the message
+   // doing processing. You can use this to pass through committer offsets from a Source, for example,
+   // and then commit only after you've produced a new value in some other broker/topic
   .via(Producer.flexiFlow(producerSettings))
   .map {
     case ProducerMessage.Result(metadata, ProducerMessage.Message(record, passThrough)) =>
@@ -71,6 +73,9 @@ object Alpakka2 extends App {
     case ProducerMessage.PassThroughResult(passThrough) =>
       s"passed through $passThrough"
   }
-  .runWith(Sink.foreach(println(_)))
+
+  val f = stream.runWith(Sink.foreach(println(_)))
+
+  f.onComplete(_ -> system.terminate())
 
 }

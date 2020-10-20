@@ -67,7 +67,7 @@ val CatsEffectVersion = "2.1.3"
 val MonixVersion = "3.2.2"
 val ZIOVersion = "1.0.0-RC21-2"
 val ShapelessVersion = "2.3.3"
-val FS2Version = "2.4.2"
+val FS2Version = "2.4.4"
 val AmmoniteVersion = "2.1.4-8-5d0c097"
 val AkkaVersion = "2.6.9"
 
@@ -81,6 +81,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-effect" % CatsEffectVersion,
   // fs2
   "co.fs2" %% "fs2-core" % FS2Version,
+  "co.fs2" %% "fs2-io" % FS2Version,
   // Monix
   "io.monix" %% "monix" % MonixVersion,
   // Shapeless
@@ -102,7 +103,7 @@ libraryDependencies ++= Seq(
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 resolvers ++= Seq(
-  "Typesafe Snapshots" at "http://repo.typesafe.com/typesafe/snapshots/",
+  "Typesafe Snapshots" at "https://repo.typesafe.com/typesafe/snapshots/",
   "Secured Central Repository" at "https://repo1.maven.org/maven2",
   Resolver.sonatypeRepo("snapshots")
 )
